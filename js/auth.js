@@ -1,5 +1,4 @@
 
-// DOM Elements
 const authContainer = document.getElementById("auth-container");
 const appContainer = document.getElementById("app-container");
 const toggleAuth = document.getElementById("toggle-auth");

@@ -1,6 +1,5 @@
 let API_BASE = window.location.origin;
 if (window.location.port === "5500") {
-  // common VS Code Live Server port; override to use Flask backend
   API_BASE = "http://127.0.0.1:5000";
 }
 

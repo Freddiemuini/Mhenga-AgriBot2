@@ -56,7 +56,14 @@ function handleFile(file, fileInfo, analyzeButton) {
   selectedFile = file;
   fileInfo.textContent = `Selected file: ${file.name}`;
   fileInfo.classList.remove("hidden");
+
   analyzeButton.disabled = false;
+
+  setTimeout(() => {
+    if (!analyzeButton.disabled) {
+      analyzeButton.click();
+    }
+  }, 0);
 }
 
 function handleDragEnter(e, dropZone) {
@@ -91,10 +98,22 @@ function handleDrop(e, dropZone, fileInput, fileInfo, analyzeButton) {
 async function handleAnalyzeClick(analyzeButton) {
   if (!selectedFile) return alert("Please upload an image");
 
-  const location = prompt("Enter location (e.g., Nairobi):", "Nairobi");
-  if (!location) return alert("Location is required");
+  if (typeof setButtonLoading === 'function') {
+    setButtonLoading(analyzeButton, true);
+  } else {
+    analyzeButton.disabled = true;
+  }
 
-  // ask the user what crop they expect (optional) to help the model
+  const location = prompt("Enter location (e.g., Nairobi):", "Nairobi");
+  if (!location) {
+    if (typeof setButtonLoading === 'function') {
+      setButtonLoading(analyzeButton, false);
+    } else {
+      analyzeButton.disabled = false;
+    }
+    return alert("Location is required");
+  }
+
   const userCrop = prompt("If you know the crop, enter its name (e.g. maize, tomato) or leave blank:", "");
 
   let lat, lon;
@@ -141,6 +160,12 @@ async function handleAnalyzeClick(analyzeButton) {
   } catch (err) {
     console.error("Analyze error caught:", err);
     alert("Error: " + err.message);
+  } finally {
+    if (typeof setButtonLoading === 'function') {
+      setButtonLoading(analyzeButton, false);
+    } else {
+      analyzeButton.disabled = false;
+    }
   }
 }
 
@@ -214,4 +239,3 @@ function resetAnalyzeForm() {
   resultsView.innerHTML = "";
 }
 
-// Initialize is called after login from auth.js

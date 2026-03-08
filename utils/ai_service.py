@@ -91,7 +91,7 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
         logger.info(f"Roboflow API Response: {rf_result}")
 
         predictions = rf_result.get("predictions", [])
-        structured = []  # will collect predictions with extra metadata
+        structured = []
         for pred in predictions:
             name = pred.get("class", "Unknown Disease")
             conf = pred.get("confidence", 0)
@@ -107,7 +107,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                 "crop_matches": crop_matches
             })
 
-        # if caller just wants all predictions, return them immediately (with success)
         if return_all:
             return {
                 "success": True,
@@ -115,10 +114,8 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                 "raw": rf_result
             }
 
-        # try to pick the best valid prediction, prioritizing those matching the expected crop
         chosen = None
         warning = None
-        # sort so that crop-matching predictions come first
         for pred in sorted(structured, key=lambda x: (not x["crop_matches"], -x["confidence"])):
             name = pred["class"]
             conf = pred["confidence"]
@@ -129,7 +126,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             if is_valid:
                 chosen = pred
                 break
-        # fallback to first prediction if none passed validity check
         if not chosen and structured:
             chosen = structured[0]
             warning = "Model predictions did not meet validation criteria; using top result."
@@ -148,11 +144,9 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                 return_val["warning"] = return_val.get("warning", "") + (
                     " Prediction does not match expected crop."
                 )
-            # include alternatives for transparency
             return_val["all_predictions"] = structured
             return return_val
         else:
-            # nothing at all returned by model
             logger.warning("No predictions returned from Roboflow model")
             disease_info = {
                 "crop_name": "Unable to Identify",

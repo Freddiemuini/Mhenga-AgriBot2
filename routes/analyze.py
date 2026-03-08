@@ -43,7 +43,7 @@ def analyze():
         file = request.files.get("file")
         lat = request.form.get("lat")
         lon = request.form.get("lon")
-        user_crop = request.form.get("crop")  # optional expected crop from user
+        user_crop = request.form.get("crop")
 
         if not file:
             return jsonify({"error": "Image file is required"}), 400
@@ -81,7 +81,6 @@ def analyze():
             "cropScientificName": disease_info.get("crop_scientific_name", "Unknown"),
             "all_predictions": disease_result.get("all_predictions", [])
         }
-        # include user-supplied crop for debugging
         if user_crop:
             result["userCrop"] = user_crop
 

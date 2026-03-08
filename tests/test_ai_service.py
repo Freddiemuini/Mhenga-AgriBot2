@@ -20,12 +20,10 @@ class DummyResponse:
 
 
 def make_image():
-    # just a byte stream; ai_service doesn't care about contents
     return io.BytesIO(b"dummy")
 
 
 def test_detect_disease_return_all(monkeypatch):
-    # prepare a fake roboflow response
     fake = {
         "predictions": [
             {"class": "tomato_early_blight", "confidence": 0.8},
@@ -55,7 +53,6 @@ def test_detect_disease_expected_crop_filters(monkeypatch):
 
     monkeypatch.setattr(requests, "post", lambda *a, **k: DummyResponse(fake))
 
-    # ask for maize; maize_rust should be chosen despite lower confidence
     result = ai_service.detect_disease(make_image(), expected_crop="maize")
     assert result["success"]
     assert result["disease_name"] == "maize_rust"
