@@ -1,4 +1,3 @@
-const API_BASE = "https://mhenga-crop-bot.onrender.com";
 
 // DOM Elements
 const authContainer = document.getElementById("auth-container");
@@ -12,8 +11,6 @@ const passwordInput = document.getElementById("password");
 const userNameSpan = document.getElementById("user-name");
 const userEmailSpan = document.getElementById("user-email");
 const logoutButton = document.getElementById("logout-button");
-
-// Reset forms
 const forgotPassword = document.getElementById("forgot-password");
 const resetRequestForm = document.getElementById("reset-request-form");
 const resetConfirmForm = document.getElementById("reset-confirm-form");
@@ -25,39 +22,18 @@ const backToLogin2 = document.getElementById("back-to-login-2");
 
 let isSignup = false;
 
-/**
- * Initialize authentication module
- */
 function initAuth() {
-  // Toggle login/signup
   toggleAuth.addEventListener("click", handleToggleAuth);
-  
-  // Show reset request form
   forgotPassword.addEventListener("click", showResetRequest);
-  
-  // Back to login
   backToLogin.addEventListener("click", showAuthForm);
   backToLogin2.addEventListener("click", showAuthForm);
-  
-  // Handle login/signup
   authForm.addEventListener("submit", handleAuthSubmit);
-  
-  // Reset request form submit
   resetRequestForm.addEventListener("submit", handleResetRequest);
-  
-  // Reset confirm form submit
   resetConfirmForm.addEventListener("submit", handleResetConfirm);
-  
-  // Logout
   logoutButton.addEventListener("click", handleLogout);
-  
-  // Auto login if token exists
   autoLogin();
 }
 
-/**
- * Toggle between login and signup
- */
 function handleToggleAuth(e) {
   e.preventDefault();
   isSignup = !isSignup;
@@ -72,18 +48,12 @@ function handleToggleAuth(e) {
   }
 }
 
-/**
- * Show reset password request form
- */
 function showResetRequest(e) {
   e.preventDefault();
   authForm.classList.add("hidden");
   resetRequestForm.classList.remove("hidden");
 }
 
-/**
- * Show auth form
- */
 function showAuthForm(e) {
   e.preventDefault();
   resetRequestForm.classList.add("hidden");
@@ -91,9 +61,6 @@ function showAuthForm(e) {
   authForm.classList.remove("hidden");
 }
 
-/**
- * Handle login/signup submission
- */
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const endpoint = isSignup ? "/signup" : "/login";
@@ -127,9 +94,6 @@ async function handleAuthSubmit(e) {
   }
 }
 
-/**
- * Handle password reset request
- */
 async function handleResetRequest(e) {
   e.preventDefault();
   try {
@@ -148,9 +112,6 @@ async function handleResetRequest(e) {
   }
 }
 
-/**
- * Handle password reset confirmation
- */
 async function handleResetConfirm(e) {
   e.preventDefault();
   try {
@@ -169,17 +130,12 @@ async function handleResetConfirm(e) {
   }
 }
 
-/**
- * Handle login success
- */
 function loginSuccess(user) {
   console.log("loginSuccess() called");
   userNameSpan.textContent = user.name;
   userEmailSpan.textContent = user.email;
   authContainer.classList.add("hidden");
   appContainer.classList.remove("hidden");
-  
-  // Initialize analyze module after showing app container
   if (typeof initAnalyze === 'function') {
     console.log("Calling initAnalyze()");
     initAnalyze();
@@ -188,9 +144,6 @@ function loginSuccess(user) {
   }
 }
 
-/**
- * Handle logout
- */
 function handleLogout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
@@ -198,9 +151,6 @@ function handleLogout() {
   authContainer.classList.remove("hidden");
 }
 
-/**
- * Auto login if token exists
- */
 function autoLogin() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   if (user) {
@@ -208,5 +158,4 @@ function autoLogin() {
   }
 }
 
-// Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", initAuth);

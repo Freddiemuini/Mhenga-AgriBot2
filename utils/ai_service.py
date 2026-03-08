@@ -15,7 +15,6 @@ def validate_prediction(disease_name, confidence):
     if confidence < 0.3:
         return False, confidence, "Confidence too low (< 30%)"
     
-    # Check if the disease name is in our database
     disease_key = disease_name.lower().replace(" ", "_").replace("-", "_")
     
     is_in_db = False
@@ -74,7 +73,7 @@ def detect_disease(image_file, min_confidence=0.5):
         min_confidence: Minimum confidence threshold (0-1). Defaults to 0.5 (50%)
     """
     try:
-        image_file.seek(0)  # Reset file pointer
+        image_file.seek(0)
         response = requests.post(
             f"https://detect.roboflow.com/{ROBOFLOW_MODEL_ID}/{ROBOFLOW_MODEL_VERSION}",
             params={"api_key": ROBOFLOW_API_KEY},
@@ -87,19 +86,16 @@ def detect_disease(image_file, min_confidence=0.5):
         logger.info(f"Roboflow API Response: {rf_result}")
 
         if "predictions" in rf_result and len(rf_result["predictions"]) > 0:
-            # Try each prediction until we find a valid one
-            for idx, prediction in enumerate(rf_result["predictions"][:3]):  # Try top 3
+            for idx, prediction in enumerate(rf_result["predictions"][:3]):
                 disease_name = prediction.get("class", "Unknown Disease")
                 confidence = prediction.get("confidence", 0)
                 
                 logger.info(f"Prediction {idx+1}: '{disease_name}' with confidence: {confidence:.2%}")
                 
-                # Validate this prediction
                 is_valid, conf, reason = validate_prediction(disease_name, confidence)
                 logger.info(f"Validation result: {reason}")
                 
                 if is_valid:
-                    # Use this prediction
                     disease_details = str(prediction)
                     disease_info = get_disease_info(disease_name)
                     
@@ -113,7 +109,6 @@ def detect_disease(image_file, min_confidence=0.5):
                         "disease_details": disease_details
                     }
             
-            # If no valid predictions found, use first one but flag it
             prediction = rf_result["predictions"][0]
             disease_name = prediction.get("class", "Unknown Disease")
             confidence = prediction.get("confidence", 0)

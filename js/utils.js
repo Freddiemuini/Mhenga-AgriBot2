@@ -1,26 +1,17 @@
-/**
- * Utility Functions
- */
+let API_BASE = window.location.origin;
+if (window.location.port === "5500") {
+  // common VS Code Live Server port; override to use Flask backend
+  API_BASE = "http://127.0.0.1:5000";
+}
 
-const API_BASE = "https://mhenga-crop-bot.onrender.com";
-
-/**
- * Format temperature for display
- */
 function formatTemperature(celsius) {
   return `${parseFloat(celsius).toFixed(1)}°C`;
 }
 
-/**
- * Format location string
- */
 function formatLocation(lat, lon) {
   return `${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`;
 }
 
-/**
- * Show loading state on button
- */
 function setButtonLoading(button, isLoading) {
   if (isLoading) {
     button.disabled = true;
@@ -33,9 +24,6 @@ function setButtonLoading(button, isLoading) {
   }
 }
 
-/**
- * Show error notification
- */
 function showError(message) {
   const notification = document.createElement("div");
   notification.className = "fixed top-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg";
@@ -44,9 +32,6 @@ function showError(message) {
   setTimeout(() => notification.remove(), 5000);
 }
 
-/**
- * Show success notification
- */
 function showSuccess(message) {
   const notification = document.createElement("div");
   notification.className = "fixed top-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg";
@@ -55,23 +40,14 @@ function showSuccess(message) {
   setTimeout(() => notification.remove(), 5000);
 }
 
-/**
- * Get token from localStorage
- */
 function getToken() {
   return localStorage.getItem("token");
 }
 
-/**
- * Get user from localStorage
- */
 function getUser() {
   return JSON.parse(localStorage.getItem("user") || "null");
 }
 
-/**
- * Check if user is authenticated
- */
 function isAuthenticated() {
   return getToken() !== null;
 }

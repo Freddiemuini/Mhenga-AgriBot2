@@ -2,7 +2,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Crop name mapping - helps identify crops from various naming conventions
 CROP_NAME_MAP = {
     "maize": {"name": "Maize (Corn)", "scientific": "Zea mays"},
     "corn": {"name": "Maize (Corn)", "scientific": "Zea mays"},
@@ -401,29 +400,24 @@ def get_disease_info(disease_name):
     
     logger.info(f"Looking up disease: '{disease_name}' (normalized: '{disease_key}')")
     
-    # Try exact match first
     if disease_key in DISEASE_GUIDE:
         result = DISEASE_GUIDE[disease_key]
         logger.info(f"Found exact match: {disease_key} -> Crop: {result['crop_name']}")
         return result
     
-    # Try alias match
     for guide_key, disease_info in DISEASE_GUIDE.items():
         aliases = disease_info.get("aliases", [])
         if disease_key in aliases:
             logger.info(f"Found alias match: {disease_key} -> {guide_key} -> Crop: {disease_info['crop_name']}")
             return disease_info
     
-    # Try to extract crop name and match from disease name
     for crop_keyword, crop_info in CROP_NAME_MAP.items():
         if crop_keyword in disease_key:
             logger.info(f"Found crop keyword '{crop_keyword}' in disease name: {disease_key}")
-            # Find disease matching this crop
             for guide_key, disease_info in DISEASE_GUIDE.items():
                 if crop_keyword in guide_key or crop_keyword in disease_info.get("crop_name", "").lower():
                     logger.info(f"Matched with disease for crop {crop_keyword}: {guide_key}")
                     return disease_info
-            # If no disease found for this crop, return a generic response with crop info
             return {
                 "crop_name": crop_info["name"],
                 "crop_scientific_name": crop_info["scientific"],
@@ -432,12 +426,10 @@ def get_disease_info(disease_name):
                 "control": ["Consult local agricultural extension officer for specific treatment"]
             }
     
-    # Try partial match with better scoring
     best_match = None
     best_score = 0
     
     for guide_key, disease_info in DISEASE_GUIDE.items():
-        # Check if normalized key contains or is contained in disease_key
         if disease_key in guide_key or guide_key in disease_key:
             score = len(set(disease_key) & set(guide_key)) / max(len(disease_key), len(guide_key))
             if score > best_score:
@@ -448,11 +440,9 @@ def get_disease_info(disease_name):
         logger.info(f"Found partial match with score {best_score} -> Crop: {best_match['crop_name']}")
         return best_match
     
-    # Try word-based matching
     disease_words = set(disease_key.split("_"))
     for guide_key, disease_info in DISEASE_GUIDE.items():
         guide_words = set(guide_key.split("_"))
-        # If at least 50% of words match
         if disease_words & guide_words:
             match_ratio = len(disease_words & guide_words) / max(len(disease_words), len(guide_words))
             if match_ratio > 0.4:

@@ -17,11 +17,9 @@ def debug_test_disease():
         if not file:
             return jsonify({"error": "Image file is required"}), 400
 
-        # Get raw Roboflow response
         raw_response = get_roboflow_raw_prediction(file)
         logger.info(f"DEBUG: Raw Roboflow response: {raw_response}")
         
-        # Now test the full detection
         file.seek(0)
         disease_result = detect_disease(file)
         
@@ -49,17 +47,14 @@ def analyze():
 
         current_user = get_jwt_identity()
 
-        # Get weather data
         weather_result = get_weather(lat, lon)
         if not weather_result["success"]:
             return jsonify({"error": weather_result["error"]}), 500
 
-        # Detect disease using AI
         disease_result = detect_disease(file)
         if not disease_result["success"]:
             return jsonify({"error": disease_result["error"]}), 500
 
-        # Get planting recommendation
         temp = weather_result.get("temperature_celsius")
         recommendation = get_planting_recommendation(temp)
 
