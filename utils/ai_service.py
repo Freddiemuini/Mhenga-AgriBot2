@@ -1,6 +1,6 @@
 import requests
 import logging
-from config import ROBOFLOW_API_KEY, ROBOFLOW_MODEL_ID, ROBOFLOW_MODEL_VERSION
+from config import ROBOFLOW_API_KEY, ROBOFLOW_MODEL_ID, ROBOFLOW_MODEL_VERSION, ROBOFLOW_CROP_MODEL_ID, ROBOFLOW_CROP_MODEL_VERSION
 from utils.disease_guide import get_disease_info, CROP_NAME_MAP, DISEASE_GUIDE
 logger = logging.getLogger(__name__)
 
@@ -40,13 +40,47 @@ def get_all_predictions(image_file):
         logger.error(f'Error getting Roboflow predictions: {str(e)}', exc_info=True)
         return None
 
+
+def identify_crop(image_file, min_confidence=0.5):
+    if not ROBOFLOW_CROP_MODEL_ID:
+        return {'success': False, 'error': 'Crop model not configured', 'requires_user_input': True}
+    try:
+        image_file.seek(0)
+        response = requests.post(f'https://detect.roboflow.com/{ROBOFLOW_CROP_MODEL_ID}/{ROBOFLOW_CROP_MODEL_VERSION}', params={'api_key': ROBOFLOW_API_KEY}, files={'file': image_file.read()}, timeout=30)
+        response.raise_for_status()
+        result = response.json()
+        predictions = result.get('predictions', [])
+        if not predictions:
+            return {'success': False, 'error': 'No crop predictions returned', 'raw': result}
+        top = max(predictions, key=lambda p: p.get('confidence', 0))
+        crop = str(top.get('class', '')).lower().strip()
+        confidence = float(top.get('confidence', 0))
+        success = confidence >= min_confidence
+        return {'success': success, 'detected_crop': crop, 'confidence': confidence, 'raw': result}
+    except Exception as e:
+        logger.error(f'Roboflow crop identification error: {str(e)}', exc_info=True)
+        return {'success': False, 'error': str(e), 'requires_user_input': True}
+
 def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_all=False):
     try:
+        if not expected_crop:
+            crop_result = identify_crop(image_file)
+            if crop_result.get('requires_user_input'):
+                logger.info('Crop model not available; proceeding without crop pre-filtering')
+            elif not crop_result.get('success'):
+                logger.warning(f'Crop identification failed: {crop_result.get("error")}')
+            else:
+                expected_crop = crop_result.get('detected_crop')
+                logger.info(f'Auto-identified crop as {expected_crop}')
+            image_file.seek(0)
+
+        expected_key = expected_crop.lower().strip() if expected_crop else None
         image_file.seek(0)
         response = requests.post(f'https://detect.roboflow.com/{ROBOFLOW_MODEL_ID}/{ROBOFLOW_MODEL_VERSION}', params={'api_key': ROBOFLOW_API_KEY}, files={'file': image_file.read()}, timeout=30)
         response.raise_for_status()
         rf_result = response.json()
         logger.info(f'Roboflow API Response: {rf_result}')
+
         predictions = rf_result.get('predictions', [])
         structured = []
         for pred in predictions:
@@ -54,21 +88,27 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             conf = pred.get('confidence', 0)
             info = get_disease_info(name)
             crop_matches = False
-            if expected_crop:
-                key = expected_crop.lower().strip()
-                crop_matches = key in info.get('crop_name', '').lower() or key in info.get('crop_scientific_name', '').lower()
+            if expected_key:
+                crop_matches = expected_key in info.get('crop_name', '').lower() or expected_key in info.get('crop_scientific_name', '').lower()
             structured.append({'class': name, 'confidence': conf, 'disease_info': info, 'crop_matches': crop_matches})
+
         if return_all:
-            return {'success': True, 'all_predictions': structured, 'raw': rf_result}
-        expected_matched = []
-        if expected_crop:
-            expected_key = expected_crop.lower().strip()
+            return {'success': True, 'all_predictions': structured, 'raw': rf_result, 'expected_crop': expected_key}
+
+        if expected_key:
             expected_matched = [p for p in structured if p.get('crop_matches')]
+            if not expected_matched and structured:
+                all_detected = sorted(set([p['disease_info'].get('crop_name', 'Unknown').lower() for p in structured if p.get('disease_info')] + ['unknown']))
+                return {
+                    'success': False,
+                    'error': f"Model returned diseases for crop(s) {', '.join(all_detected)} but expected '{expected_key}'. Please use a {expected_key} image or train a dedicated model.",
+                    'all_predictions': structured,
+                    'raw': rf_result,
+                    'expected_crop': expected_key
+                }
             if expected_matched:
-                logger.info(f"Expected crop '{expected_crop}' matched {len(expected_matched)} predictions; using matched list")
                 structured = expected_matched
-            else:
-                logger.info(f"Expected crop '{expected_crop}' had no exact disease match; continuing with all predictions")
+
         chosen = None
         warning = None
         for pred in sorted(structured, key=lambda x: (not x['crop_matches'], -x['confidence'])):

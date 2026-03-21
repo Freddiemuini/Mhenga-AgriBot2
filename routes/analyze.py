@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.weather_service import get_weather, get_planting_recommendation
-from utils.ai_service import detect_disease, get_roboflow_raw_prediction
+from utils.ai_service import detect_disease, get_roboflow_raw_prediction, identify_crop
 import logging
 logger = logging.getLogger(__name__)
 analyze_bp = Blueprint('analyze', __name__)
@@ -38,6 +38,21 @@ def analyze():
         weather_result = get_weather(lat, lon)
         if not weather_result['success']:
             return (jsonify({'error': weather_result['error']}), 500)
+
+        # If user didn't provide crop, try automatic crop identification first.
+        if not user_crop:
+            crop_id = identify_crop(file)
+            if crop_id.get('success'):
+                user_crop = crop_id.get('detected_crop')
+                logger.info(f"Auto-identified crop as '{user_crop}' with confidence {crop_id.get('confidence')}")
+                file.seek(0)
+            elif crop_id.get('requires_user_input'):
+                logger.warning('Crop auto-identification not available; proceeding with disease detection')
+                file.seek(0)
+            else:
+                logger.warning(f'Crop identification error: {crop_id.get("error")}')
+                file.seek(0)
+
         disease_result = detect_disease(file, expected_crop=user_crop)
         if not disease_result['success']:
             return (jsonify({'error': disease_result['error']}), 500)

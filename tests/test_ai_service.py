@@ -40,3 +40,17 @@ def test_detect_disease_expected_crop_filters(monkeypatch):
     assert result['disease_name'] == 'maize_rust'
     assert result['confidence'] == 0.7
     assert any((p['crop_matches'] for p in result.get('all_predictions', [])))
+
+
+def test_identify_crop_not_configured():
+    result = ai_service.identify_crop(make_image())
+    assert not result['success']
+    assert result.get('requires_user_input') == True
+
+
+def test_detect_disease_crop_mismatch_failure(monkeypatch):
+    fake = {'predictions': [{'class': 'tomato_early_blight', 'confidence': 0.89}]}
+    monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
+    result = ai_service.detect_disease(make_image(), expected_crop='maize')
+    assert not result['success']
+    assert 'expected' in result['error'].lower()

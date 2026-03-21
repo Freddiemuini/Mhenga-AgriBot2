@@ -5,7 +5,7 @@ ROBOFLOW_API_KEY = "ctkt12G5XN3jQUlLIiIk"
 ROBOFLOW_CROP_MODEL_ID = "crop-identification-model"
 ROBOFLOW_CROP_MODEL_VERSION = "1"
 
-def test_crop_identification(image_path, expected_crop):
+def crop_identification(image_path, expected_crop):
     try:
         with open(image_path, 'rb') as image_file:
             response = requests.post(
@@ -63,7 +63,7 @@ def batch_test_crop_identification(test_images_dir, crop_mapping):
 
         crop_stats[expected_crop]["total"] += 1
 
-        result = test_crop_identification(image_path, expected_crop)
+        result = crop_identification(image_path, expected_crop)
         results.append(result)
 
         if "error" in result:

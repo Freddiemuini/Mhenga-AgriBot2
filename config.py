@@ -21,6 +21,8 @@ class ProductionConfig(Config):
     DEBUG = False
 config = {'development': DevelopmentConfig, 'production': ProductionConfig, 'default': DevelopmentConfig}
 AGROMONITORING_API_KEY = '4f84c6035c447f4c14faf4ac0f2f1a06'
-ROBOFLOW_API_KEY = 'ctkt12G5XN3jQUlLIiIk'
-ROBOFLOW_MODEL_ID = 'crop-disease-2rilx'
-ROBOFLOW_MODEL_VERSION = '4'
+ROBOFLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY', 'ctkt12G5XN3jQUlLIiIk')
+ROBOFLOW_MODEL_ID = os.getenv('ROBOFLOW_MODEL_ID', 'crop-disease-2rilx')
+ROBOFLOW_MODEL_VERSION = os.getenv('ROBOFLOW_MODEL_VERSION', '4')
+ROBOFLOW_CROP_MODEL_ID = os.getenv('ROBOFLOW_CROP_MODEL_ID', None)
+ROBOFLOW_CROP_MODEL_VERSION = os.getenv('ROBOFLOW_CROP_MODEL_VERSION', '1')
