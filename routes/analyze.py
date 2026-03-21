@@ -56,11 +56,29 @@ def analyze():
             supported_crops = sorted(list(set([v['name'] for v in CROP_NAME_MAP.values()])))
             return (jsonify({'error': f"Crop '{user_crop}' not recognized", 'supported_crops': supported_crops}), 400)
         
+        # Validate that the image contains a crop/plant (not random image)
+        logger.info(f"Validating image contains crop data...")
+        raw_predictions = get_roboflow_raw_prediction(file)
+        if 'error' in raw_predictions:
+            return (jsonify({'error': 'Failed to validate image: ' + raw_predictions['error']}), 400)
+        
+        predictions = raw_predictions.get('predictions', [])
+        if not predictions or len(predictions) == 0:
+            logger.warning(f"Image validation failed: No crop/disease predictions detected in image")
+            return (jsonify({'error': 'Image validation failed: No crop or disease detected in the image. Please upload an image showing a crop plant or affected plant part.', 'info': 'Make sure the image clearly shows the crop or affected area.'}), 400)
+        
+        # Check if predictions have reasonable confidence
+        top_prediction_confidence = max([p.get('confidence', 0) for p in predictions])
+        if top_prediction_confidence < 0.2:
+            logger.warning(f"Image validation failed: Low confidence in predictions ({top_prediction_confidence:.1%})")
+            return (jsonify({'error': 'Image quality issue: The system cannot clearly identify crop content in the image. Please provide a clearer image of the crop or affected plant part.'}), 400)
+        
         current_user = get_jwt_identity()
         weather_result = get_weather(lat, lon)
         if not weather_result['success']:
             return (jsonify({'error': weather_result['error']}), 500)
 
+        file.seek(0)
         disease_result = detect_disease(file, expected_crop=crop_key, require_crop_match=True)
         if not disease_result['success']:
             return (jsonify({'error': disease_result['error'], 'expected_crop': crop_key, 'crop_info': crop_info}), 400)

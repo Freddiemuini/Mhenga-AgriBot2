@@ -83,3 +83,15 @@ def test_detect_disease_bean_mismatch_returns_bean_disease(monkeypatch):
     assert 'bean' in result['disease_info']['crop_name'].lower()
     assert result['expected_crop'] == 'bean'
     assert result['confidence'] == 0
+
+
+def test_detect_disease_empty_image_no_predictions(monkeypatch):
+    """Test that system handles images with no predictions by returning crop-specific disease"""
+    fake = {'predictions': []}  # Empty predictions - no crop detected
+    monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
+    result = ai_service.detect_disease(make_image(), expected_crop='maize')
+    assert result['success']
+    # Should return a maize disease from the database (not "No Disease Detected")
+    # because system finds diseases for the user's specified crop
+    assert 'maize' in result['disease_info']['crop_name'].lower() or 'corn' in result['disease_info']['crop_name'].lower()
+    assert result['expected_crop'] == 'maize'
