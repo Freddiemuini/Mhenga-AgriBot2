@@ -99,25 +99,72 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
 
         if expected_key:
             expected_matched = [p for p in structured if p.get('crop_matches')]
-            if not expected_matched and structured:
-                all_detected = sorted(set([p['disease_info'].get('crop_name', 'Unknown').lower() for p in structured if p.get('disease_info')] + ['unknown']))
-                error_msg = f"Model detected diseases for {', '.join(all_detected)} but you specified '{expected_key}'. Please verify you are analyzing the correct crop image."
-                logger.warning(f'Crop mismatch: expected {expected_key}, detected {all_detected}')
-                if require_crop_match:
-                    return {
-                        'success': False,
-                        'error': error_msg,
-                        'all_predictions': structured,
-                        'raw': rf_result,
-                        'expected_crop': expected_key,
-                        'detected_crops': all_detected
-                    }
             if expected_matched:
                 structured = expected_matched
+            else:
+                # User specified a crop but model didn't detect any disease for that crop
+                # Find diseases for the user's crop from DISEASE_GUIDE
+                logger.warning(f'User specified crop {expected_key} but model did not detect any {expected_key} diseases. Looking for {expected_key} diseases in database.')
+                crop_info = CROP_NAME_MAP.get(expected_key)
+                if crop_info:
+                    crop_name = crop_info['name']
+                    scientific_name = crop_info['scientific']
+                else:
+                    crop_name = expected_key.capitalize()
+                    scientific_name = ''
+                
+                # Find all diseases for this crop in DISEASE_GUIDE
+                crop_diseases = []
+                for disease_key, disease_info in DISEASE_GUIDE.items():
+                    disease_crop_name = disease_info.get('crop_name', '').lower()
+                    if expected_key in disease_crop_name:
+                        crop_diseases.append({
+                            'disease_key': disease_key,
+                            'disease_name': disease_key,
+                            'description': disease_info.get('description', ''),
+                            'prevention': disease_info.get('prevention', []),
+                            'control': disease_info.get('control', []),
+                            'disease_info': disease_info
+                        })
+                
+                if crop_diseases:
+                    # Return the first disease found for this crop
+                    selected_disease = crop_diseases[0]
+                    logger.info(f'Found {len(crop_diseases)} diseases for {expected_key}. Returning: {selected_disease["disease_key"]}')
+                    return {
+                        'success': True,
+                        'disease_name': selected_disease['disease_key'],
+                        'confidence': 0,
+                        'disease_info': selected_disease['disease_info'],
+                        'disease_details': f'Showing {crop_name} disease information from database',
+                        'all_predictions': structured,
+                        'expected_crop': expected_key
+                    }
+                else:
+                    # No diseases found for this crop in database
+                    disease_info = {
+                        'crop_name': crop_name,
+                        'crop_scientific_name': scientific_name,
+                        'description': f'No disease detected for {crop_name}. The plant may be healthy or the image may not clearly show the affected area. Please provide a clearer image of the affected plant part.',
+                        'prevention': ['Monitor plants regularly', 'Maintain good farming practices', 'Ensure proper irrigation'],
+                        'control': ['Continue current crop management practices']
+                    }
+                    return {
+                        'success': True,
+                        'disease_name': 'No Disease Detected',
+                        'confidence': 0,
+                        'disease_info': disease_info,
+                        'disease_details': f'No {crop_name} diseases detected in image',
+                        'all_predictions': structured,
+                        'expected_crop': expected_key
+                    }
+
 
         chosen = None
         warning = None
-        for pred in sorted(structured, key=lambda x: (not x['crop_matches'], -x['confidence'])):
+        # If expected_crop is set, only consider predictions that match it
+        candidates = [p for p in structured if not expected_key or p.get('crop_matches')]
+        for pred in sorted(candidates, key=lambda x: (not x.get('crop_matches'), -x['confidence'])):
             name = pred['class']
             conf = pred['confidence']
             if conf < min_confidence:
@@ -127,31 +174,30 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             if is_valid:
                 chosen = pred
                 break
-        if not chosen and structured:
-            chosen = structured[0]
+        if not chosen and candidates:
+            chosen = candidates[0]
             warning = 'Model predictions did not meet validation criteria; using top result.'
         if chosen:
             disease_info = chosen['disease_info']
-            crop_info = CROP_NAME_MAP.get(expected_crop.lower().strip()) if expected_crop else None
-            if expected_crop and (not chosen.get('crop_matches')) and crop_info:
-                disease_info = {'crop_name': crop_info['name'], 'crop_scientific_name': crop_info['scientific'], 'description': f"Model predicted a different crop ({chosen['class']}) than expected ({crop_info['name']}). Please re-upload a clearer {crop_info['name']} image.", 'prevention': ['General good farming practices', 'Crop rotation', 'Use resistant varieties'], 'control': ['Consult local agricultural extension officer for specific treatment']}
-                warning = (warning or '') + ' Prediction does not match expected crop; using expected crop fallback.'
-                logger.info(f"Expected crop mismatch fallback used for '{expected_crop}' (predicted {chosen['class']})")
             return_val = {'success': True, 'disease_name': chosen['class'], 'confidence': chosen['confidence'], 'disease_info': disease_info, 'disease_details': str(chosen)}
-            if warning:
-                return_val['warning'] = warning
             return_val['all_predictions'] = structured
             return return_val
         else:
             logger.warning('No predictions returned from Roboflow model')
-            disease_info = {'crop_name': 'Unable to Identify', 'crop_scientific_name': 'Unknown', 'description': 'Could not identify any crop/disease. Please provide a clearer image showing the affected plant part or consult a local agricultural extension officer.', 'prevention': ['General good farming practices'], 'control': ['Consult local agricultural extension officer for identification and treatment']}
-            return {'success': True, 'disease_name': 'Unknown Disease', 'confidence': 0, 'disease_info': disease_info, 'disease_details': 'No predictions from model.', 'all_predictions': structured}
-    except requests.exceptions.HTTPError as e:
-        logger.error(f'Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}')
-        return {'success': False, 'error': f'Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}'}
-    except Exception as e:
-        logger.error(f'Roboflow API failed: {str(e)}', exc_info=True)
-        return {'success': False, 'error': f'Roboflow API failed: {str(e)}'}
+            # If user specified a crop, use that information instead of "Unknown"
+            if expected_key:
+                crop_info = CROP_NAME_MAP.get(expected_key)
+                if crop_info:
+                    crop_name = crop_info['name']
+                    scientific_name = crop_info['scientific']
+                else:
+                    crop_name = expected_key.capitalize()
+                    scientific_name = ''
+            else:
+                crop_name = 'Unable to Identify'
+                scientific_name = 'Unknown'
+            disease_info = {'crop_name': crop_name, 'crop_scientific_name': scientific_name, 'description': 'Could not identify any crop/disease. Please provide a clearer image showing the affected plant part or consult a local agricultural extension officer.', 'prevention': ['General good farming practices'], 'control': ['Consult local agricultural extension officer for identification and treatment']}
+            return {'success': True, 'disease_name': 'No Disease Detected', 'confidence': 0, 'disease_info': disease_info, 'disease_details': 'No predictions from model.', 'all_predictions': structured, 'expected_crop': expected_key}
     except requests.exceptions.HTTPError as e:
         logger.error(f'Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}')
         return {'success': False, 'error': f'Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}'}

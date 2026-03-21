@@ -187,8 +187,8 @@ function displayResults(data) {
     <div class="space-y-4">
       <div class="bg-green-50 p-4 rounded-lg">
         <h2 class="text-xl font-bold text-green-700 mb-2">Detected Crop</h2>
-        <p><strong>English Name:</strong> ${data.cropEnglishName || "Unknown"}</p>
-        <p><strong>Scientific Name:</strong> <em>${data.cropScientificName || "Unknown"}</em></p>
+        <p><strong>English Name:</strong> ${data.crop_specified || "Unknown"}</p>
+        <p><strong>Scientific Name:</strong> <em>${data.crop_scientific_name || "Unknown"}</em></p>
       </div>
 
       ${predictionSection}
