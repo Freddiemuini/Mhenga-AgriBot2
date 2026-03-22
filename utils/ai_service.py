@@ -102,8 +102,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             if expected_matched:
                 structured = expected_matched
             else:
-                # User specified a crop but model didn't detect any disease for that crop
-                # Find diseases for the user's crop from DISEASE_GUIDE
                 logger.warning(f'User specified crop {expected_key} but model did not detect any {expected_key} diseases. Looking for {expected_key} diseases in database.')
                 crop_info = CROP_NAME_MAP.get(expected_key)
                 if crop_info:
@@ -113,7 +111,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                     crop_name = expected_key.capitalize()
                     scientific_name = ''
                 
-                # Find all diseases for this crop in DISEASE_GUIDE
                 crop_diseases = []
                 for disease_key, disease_info in DISEASE_GUIDE.items():
                     disease_crop_name = disease_info.get('crop_name', '').lower()
@@ -128,7 +125,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                         })
                 
                 if crop_diseases:
-                    # Return the first disease found for this crop
                     selected_disease = crop_diseases[0]
                     logger.info(f'Found {len(crop_diseases)} diseases for {expected_key}. Returning: {selected_disease["disease_key"]}')
                     return {
@@ -141,7 +137,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                         'expected_crop': expected_key
                     }
                 else:
-                    # No diseases found for this crop in database
                     disease_info = {
                         'crop_name': crop_name,
                         'crop_scientific_name': scientific_name,
@@ -162,7 +157,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
 
         chosen = None
         warning = None
-        # If expected_crop is set, only consider predictions that match it
         candidates = [p for p in structured if not expected_key or p.get('crop_matches')]
         for pred in sorted(candidates, key=lambda x: (not x.get('crop_matches'), -x['confidence'])):
             name = pred['class']
@@ -184,7 +178,6 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             return return_val
         else:
             logger.warning('No predictions returned from Roboflow model')
-            # If user specified a crop, use that information instead of "Unknown"
             if expected_key:
                 crop_info = CROP_NAME_MAP.get(expected_key)
                 if crop_info:

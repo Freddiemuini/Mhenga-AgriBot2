@@ -54,10 +54,8 @@ def test_detect_disease_crop_mismatch_fallback_to_user_crop(monkeypatch):
     monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
     result = ai_service.detect_disease(make_image(), expected_crop='maize')
     assert result['success']
-    # System should return a maize disease from the database since user specified maize
     assert result['disease_info']['crop_name'].lower() in ['maize (corn)', 'maize', 'corn']
     assert result['expected_crop'] == 'maize'
-    # Disease should be from DISEASE_GUIDE for maize
     assert any(disease in result['disease_name'].lower() for disease in ['maize', 'corn'])
 
 
@@ -67,7 +65,6 @@ def test_detect_disease_crop_match_with_user_input(monkeypatch):
     monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
     result = ai_service.detect_disease(make_image(), expected_crop='maize')
     assert result['success']
-    # System should return the maize disease since both model and user agree on maize
     assert result['disease_name'] == 'maize_rust'
     assert result['confidence'] == 0.85
     assert 'maize' in result['disease_info']['crop_name'].lower()
@@ -79,7 +76,6 @@ def test_detect_disease_bean_mismatch_returns_bean_disease(monkeypatch):
     monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
     result = ai_service.detect_disease(make_image(), expected_crop='bean')
     assert result['success']
-    # System should return a bean disease from the database
     assert 'bean' in result['disease_info']['crop_name'].lower()
     assert result['expected_crop'] == 'bean'
     assert result['confidence'] == 0
@@ -87,11 +83,9 @@ def test_detect_disease_bean_mismatch_returns_bean_disease(monkeypatch):
 
 def test_detect_disease_empty_image_no_predictions(monkeypatch):
     """Test that system handles images with no predictions by returning crop-specific disease"""
-    fake = {'predictions': []}  # Empty predictions - no crop detected
+    fake = {'predictions': []}
     monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
     result = ai_service.detect_disease(make_image(), expected_crop='maize')
     assert result['success']
-    # Should return a maize disease from the database (not "No Disease Detected")
-    # because system finds diseases for the user's specified crop
     assert 'maize' in result['disease_info']['crop_name'].lower() or 'corn' in result['disease_info']['crop_name'].lower()
     assert result['expected_crop'] == 'maize'

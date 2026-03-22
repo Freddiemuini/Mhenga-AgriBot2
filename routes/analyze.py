@@ -56,7 +56,6 @@ def analyze():
             supported_crops = sorted(list(set([v['name'] for v in CROP_NAME_MAP.values()])))
             return (jsonify({'error': f"Crop '{user_crop}' not recognized", 'supported_crops': supported_crops}), 400)
         
-        # Validate that the image contains a crop/plant (not random image)
         logger.info(f"Validating image contains crop data...")
         raw_predictions = get_roboflow_raw_prediction(file)
         if 'error' in raw_predictions:
@@ -67,7 +66,6 @@ def analyze():
             logger.warning(f"Image validation failed: No crop/disease predictions detected in image")
             return (jsonify({'error': 'Image validation failed: No crop or disease detected in the image. Please upload an image showing a crop plant or affected plant part.', 'info': 'Make sure the image clearly shows the crop or affected area.'}), 400)
         
-        # Check if predictions have reasonable confidence
         top_prediction_confidence = max([p.get('confidence', 0) for p in predictions])
         if top_prediction_confidence < 0.2:
             logger.warning(f"Image validation failed: Low confidence in predictions ({top_prediction_confidence:.1%})")
