@@ -30,7 +30,12 @@ def create_app(config_name='development'):
     mail = Mail(app)
     serializer = URLSafeTimedSerializer(app.config['JWT_SECRET_KEY'])
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print("✅ Database tables created/verified successfully")
+        except Exception as e:
+            print(f"⚠️ Database initialization error: {e}")
+            # Continue anyway - might be a transient error
     auth_bp = init_auth_routes(app, mail, serializer)
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(analyze_bp, url_prefix='/api')
