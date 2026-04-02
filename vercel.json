@@ -1,10 +1,4 @@
 {
-  "public": ".",
-  "cleanUrls": false,
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "index.html"
-    }
-  ]
+  "buildCommand": "",
+  "outputDirectory": "./"
 }
