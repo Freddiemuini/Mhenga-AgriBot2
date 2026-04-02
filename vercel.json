@@ -1,4 +1,12 @@
 {
-  "buildCommand": "",
-  "outputDirectory": "./"
+  "buildCommand": "pip install -r requirements.txt",
+  "outputDirectory": "./",
+  "framework": "flask",
+  "python": {
+    "version": "3.11"
+  },
+  "env": {
+    "FLASK_ENV": "production"
+  },
+  "crons": ["0 0 * * *"]
 }

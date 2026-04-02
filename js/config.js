@@ -1,12 +1,14 @@
 // API Configuration for Vercel deployment
-// Directly set the production API URL
+// Use relative paths for API calls - Vercel will route /api/* to serverless functions
 
-// Production API URL
-let API_BASE = "https://mhenga-agribot2-production.up.railway.app";
+let API_BASE = "";
 
-// For development on localhost
+// For local development on localhost
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
   API_BASE = "http://localhost:5000";
+} else {
+  // For Vercel production - use same domain (relative path)
+  API_BASE = window.location.origin;
 }
 
 console.log("API_BASE configured as:", API_BASE);

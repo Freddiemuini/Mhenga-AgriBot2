@@ -33,8 +33,8 @@ def create_app(config_name='development'):
     with app.app_context():
         db.create_all()
     auth_bp = init_auth_routes(app, mail, serializer)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(analyze_bp)
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(analyze_bp, url_prefix='/api')
 
     @app.route('/')
     def home():
