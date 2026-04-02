@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 analyze_bp = Blueprint('analyze', __name__)
 
-@analyze_bp.route('/crops', methods=['GET', 'OPTIONS'])
+@analyze_bp.route('/crops', methods=['GET'])
 def get_supported_crops():
     crop_diseases = {}
     for disease_key, disease_info in DISEASE_GUIDE.items():

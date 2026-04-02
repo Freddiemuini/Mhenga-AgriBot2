@@ -23,8 +23,13 @@ def create_app(config_name='production'):
         app = Flask(__name__)
         app.config.from_object(config.get(config_name, config['production']))
         
-        # Configure CORS - MUST be before registering blueprints
-        CORS(app, supports_credentials=False)
+        # CORS MUST be configured FIRST, before anything else
+        CORS(app, 
+             origins="*",
+             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             allow_headers=["Content-Type", "Authorization"],
+             supports_credentials=False,
+             max_age=3600)
         logger.info("CORS configured")
         
         db.init_app(app)
@@ -61,6 +66,16 @@ def create_app(config_name='production'):
         @app.route('/api/health')
         def health():
             return (jsonify({'status': 'healthy', 'service': 'Mhenga Crop Bot API'}), 200)
+        
+        # Error handlers
+        @app.errorhandler(404)
+        def not_found(error):
+            return jsonify({'error': 'Not found'}), 404
+        
+        @app.errorhandler(500)
+        def server_error(error):
+            logger.error(f"500 error: {error}")
+            return jsonify({'error': 'Internal server error'}), 500
         
         logger.info(f"✅ Flask app created successfully")
         return app
