@@ -1,4 +1,13 @@
 {
-  "buildCommand": "npm run build || true",
-  "outputDirectory": "./"
+  "buildCommand": "echo 'Static frontend - no build needed'",
+  "outputDirectory": "./",
+  "public": "./",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
