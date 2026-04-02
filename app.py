@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from itsdangerous import URLSafeTimedSerializer
 import logging
+import os
 from config import config, Config
 from models import db
 from routes.auth import init_auth_routes
@@ -13,7 +14,17 @@ def create_app(config_name='development'):
     app = Flask(__name__)
     app.config.from_object(config.get(config_name, config['development']))
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    CORS(app)
+    
+    # Configure CORS to allow requests from frontend
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["*"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
+    
     db.init_app(app)
     JWTManager(app)
     mail = Mail(app)
@@ -21,13 +32,18 @@ def create_app(config_name='development'):
     with app.app_context():
         db.create_all()
     auth_bp = init_auth_routes(app, mail, serializer)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(analyze_bp)
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(analyze_bp, url_prefix='/api')
 
     @app.route('/')
     def home():
-        return (jsonify({'message': 'Crop Bot API with Auth, JWT, Email, Weather & Roboflow AI is running!', 'version': '2.0'}), 200)
+        return (jsonify({'message': 'Mhenga Crop Bot API v2.0 - Running on Railway', 'version': '2.0', 'status': 'healthy'}), 200)
+    
+    @app.route('/api/health')
+    def health():
+        return (jsonify({'status': 'healthy', 'service': 'Mhenga Crop Bot API'}), 200)
+    
     return app
 app = create_app('production')
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

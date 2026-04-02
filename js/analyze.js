@@ -140,7 +140,7 @@ async function handleAnalyzeClick(analyzeButton) {
   try {
     const token = localStorage.getItem("token");
     console.log("Sending analyze request with file:", selectedFile.name);
-    const res = await fetch(API_BASE + "/analyze", {
+    const res = await fetch(API_BASE + "/api/analyze", {
       method: "POST",
       headers: {
         "Authorization": "Bearer " + token

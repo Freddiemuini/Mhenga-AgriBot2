@@ -62,7 +62,7 @@ function showAuthForm(e) {
 
 async function handleAuthSubmit(e) {
   e.preventDefault();
-  const endpoint = isSignup ? "/signup" : "/login";
+  const endpoint = isSignup ? "/api/signup" : "/api/login";
   const body = {
     email: emailInput.value,
     password: passwordInput.value
@@ -96,7 +96,7 @@ async function handleAuthSubmit(e) {
 async function handleResetRequest(e) {
   e.preventDefault();
   try {
-    const res = await fetch(API_BASE + "/reset-password-request", {
+    const res = await fetch(API_BASE + "/api/reset-password-request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: resetEmail.value })
@@ -114,7 +114,7 @@ async function handleResetRequest(e) {
 async function handleResetConfirm(e) {
   e.preventDefault();
   try {
-    const res = await fetch(API_BASE + "/reset-password-confirm/" + resetToken.value, {
+    const res = await fetch(API_BASE + "/api/reset-password-confirm/" + resetToken.value, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ new_password: newPassword.value })
