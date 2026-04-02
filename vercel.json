@@ -1,0 +1,26 @@
+{
+  "public": ".",
+  "cleanUrls": false,
+  "functions": {
+    "routes/**/*.py": {
+      "memory": 1024,
+      "timeout": 60
+    }
+  },
+  "env": {
+    "FLASK_ENV": "@flask_env",
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET_KEY": "@jwt_secret_key",
+    "ROBOFLOW_API_KEY": "@roboflow_api_key",
+    "ROBOFLOW_MODEL_ID": "@roboflow_model_id",
+    "ROBOFLOW_MODEL_VERSION": "@roboflow_model_version",
+    "AGROMONITORING_API_KEY": "@agromonitoring_api_key",
+    "MAIL_SERVER": "@mail_server",
+    "MAIL_PORT": "@mail_port",
+    "MAIL_USERNAME": "@mail_username",
+    "MAIL_PASSWORD": "@mail_password"
+  },
+  "git": {
+    "silent": true
+  }
+}

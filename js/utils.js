@@ -1,7 +1,4 @@
-let API_BASE = window.location.origin;
-if (window.location.port === "5500") {
-  API_BASE = "http://127.0.0.1:5000";
-}
+// API_BASE is now set by config.js - no need to set it here
 
 function formatTemperature(celsius) {
   return `${parseFloat(celsius).toFixed(1)}°C`;

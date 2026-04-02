@@ -1,0 +1,13 @@
+{
+  "name": "mhenga-crop-bot",
+  "version": "2.0.0",
+  "description": "Crop disease analysis API powered by Roboflow and weather data",
+  "private": true,
+  "scripts": {
+    "dev": "python app.py",
+    "start": "python -m gunicorn app:app"
+  },
+  "keywords": ["crop", "disease", "analysis", "roboflow", "agriculture"],
+  "author": "",
+  "license": "ISC"
+}
