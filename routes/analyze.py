@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from flask_cors import cross_origin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.weather_service import get_weather, get_planting_recommendation
 from utils.ai_service import detect_disease, get_roboflow_raw_prediction, identify_crop
@@ -9,7 +8,6 @@ logger = logging.getLogger(__name__)
 analyze_bp = Blueprint('analyze', __name__)
 
 @analyze_bp.route('/crops', methods=['GET', 'OPTIONS'])
-@cross_origin()
 def get_supported_crops():
     crop_diseases = {}
     for disease_key, disease_info in DISEASE_GUIDE.items():
