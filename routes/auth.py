@@ -59,12 +59,15 @@ def init_auth_routes(app, mail, serializer):
         token = serializer.dumps(email.lower(), salt='password-reset-salt')
         reset_link = url_for('auth.reset_password_confirm', token=token, _external=True)
         try:
-            msg = Message(subject='AgriBot Password Reset 🔑', recipients=[email], body=f"Hello {user.name},\n\nWe received a request to reset your password.\n\nClick the link below to reset it:\n{reset_link}\n\nThis link is valid for 30 minutes.\n\nIf you didn't request this, you can ignore this email.")
-            mail.send(msg)
+            if mail:
+                msg = Message(subject='AgriBot Password Reset 🔑', recipients=[email], body=f"Hello {user.name},\n\nWe received a request to reset your password.\n\nClick the link below to reset it:\n{reset_link}\n\nThis link is valid for 30 minutes.\n\nIf you didn't request this, you can ignore this email.")
+                mail.send(msg)
+            else:
+                print('Mail not configured, returning reset link in response')
         except Exception as e:
             print('Password reset email failed:', str(e))
             return (jsonify({'error': 'Failed to send reset email'}), 500)
-        return (jsonify({'message': 'Password reset link sent to your email.'}), 200)
+        return (jsonify({'message': 'Password reset link sent to your email. Check your inbox or spam folder.', 'reset_link': reset_link if not mail else None}), 200)
 
     @auth_bp.route('/reset-password-confirm/<token>', methods=['POST', 'OPTIONS'])
     @cross_origin()

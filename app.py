@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from itsdangerous import URLSafeTimedSerializer
@@ -29,7 +29,16 @@ def create_app(config_name='production'):
         
         db.init_app(app)
         JWTManager(app)
-        mail = Mail(app)
+        
+        # Initialize mail without crashing if config is wrong
+        mail = Mail()
+        try:
+            mail.init_app(app)
+            logger.info("Mail initialized successfully")
+        except Exception as e:
+            logger.warning(f"Mail initialization failed (non-critical): {e}")
+            mail = None
+        
         serializer = URLSafeTimedSerializer(app.config['JWT_SECRET_KEY'])
         
         with app.app_context():
@@ -45,10 +54,13 @@ def create_app(config_name='production'):
         logger.info("Blueprints registered")
 
         @app.route('/')
+        @app.route('/api')
+        @cross_origin()
         def home():
             return (jsonify({'message': 'Mhenga Crop Bot API v2.0 - Running on Railway', 'version': '2.0', 'status': 'healthy'}), 200)
         
         @app.route('/api/health')
+        @cross_origin()
         def health():
             return (jsonify({'status': 'healthy', 'service': 'Mhenga Crop Bot API'}), 200)
         
