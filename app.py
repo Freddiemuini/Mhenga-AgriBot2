@@ -25,11 +25,11 @@ def create_app(config_name='production'):
         
         # Configure CORS to allow requests from frontend
         CORS(app, resources={
-            r"/*": {
+            r"/api/*": {
                 "origins": ["*"],
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
-                "supports_credentials": True
+                "supports_credentials": False
             }
         })
         logger.info("CORS configured")
