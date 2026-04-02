@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, url_for
+from flask_cors import cross_origin
 from models import db, User
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +9,8 @@ auth_bp = Blueprint('auth', __name__)
 
 def init_auth_routes(app, mail, serializer):
 
-    @auth_bp.route('/signup', methods=['POST'])
+    @auth_bp.route('/signup', methods=['POST', 'OPTIONS'])
+    @cross_origin()
     def signup():
         data = request.get_json()
         name = data.get('name')
@@ -30,7 +32,8 @@ def init_auth_routes(app, mail, serializer):
             return (jsonify({'message': 'Signup successful, but email sending failed.'}), 201)
         return (jsonify({'message': 'Signup successful, welcome email sent!'}), 201)
 
-    @auth_bp.route('/login', methods=['POST'])
+    @auth_bp.route('/login', methods=['POST', 'OPTIONS'])
+    @cross_origin()
     def login():
         data = request.get_json()
         email = data.get('email')
@@ -43,7 +46,8 @@ def init_auth_routes(app, mail, serializer):
         access_token = create_access_token(identity=user.email)
         return (jsonify({'message': 'Login successful', 'access_token': access_token, 'user': {'name': user.name, 'email': user.email}}), 200)
 
-    @auth_bp.route('/reset-password-request', methods=['POST'])
+    @auth_bp.route('/reset-password-request', methods=['POST', 'OPTIONS'])
+    @cross_origin()
     def reset_password_request():
         data = request.get_json()
         email = data.get('email')
@@ -62,7 +66,8 @@ def init_auth_routes(app, mail, serializer):
             return (jsonify({'error': 'Failed to send reset email'}), 500)
         return (jsonify({'message': 'Password reset link sent to your email.'}), 200)
 
-    @auth_bp.route('/reset-password-confirm/<token>', methods=['POST'])
+    @auth_bp.route('/reset-password-confirm/<token>', methods=['POST', 'OPTIONS'])
+    @cross_origin()
     def reset_password_confirm(token):
         try:
             email = serializer.loads(token, salt='password-reset-salt', max_age=1800)

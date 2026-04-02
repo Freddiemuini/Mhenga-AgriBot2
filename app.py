@@ -23,15 +23,8 @@ def create_app(config_name='production'):
         app = Flask(__name__)
         app.config.from_object(config.get(config_name, config['production']))
         
-        # Configure CORS to allow requests from frontend
-        CORS(app, resources={
-            r"/api/*": {
-                "origins": ["*"],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                "allow_headers": ["Content-Type", "Authorization"],
-                "supports_credentials": False
-            }
-        })
+        # Configure CORS globally
+        CORS(app)
         logger.info("CORS configured")
         
         db.init_app(app)
